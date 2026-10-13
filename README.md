@@ -140,6 +140,13 @@ config — `~/.config/opencode/opencode.jsonc`:
 > array — loading two copies in one server process creates two separate
 > registries.
 
+## Similar projects
+
+- [opencode-ssh](https://github.com/snez/opencode-ssh) — session-wide remote
+  mode: say `ssh <host>` and every command runs on that one server.
+- [opencode-remote-ssh by TyRoden](https://github.com/TyRoden/opencode-remote-ssh)
+  — provider-based remote workspaces via a Go stub installed on each host.
+
 ## Transparency
 
 This plugin is developed using AI tools and agents, with human review of every
