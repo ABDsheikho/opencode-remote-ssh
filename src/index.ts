@@ -14,6 +14,7 @@ import {
   isHostInSshConfig,
   isManagedSocketFile,
   namespaceOf,
+  normalizeServerArg,
   refPathFor,
   socketPathFor,
   stripTargetMentions,
@@ -186,7 +187,18 @@ export default Plugin.define({
           }
           const sshConfig = readSshConfig()
           const results: string[] = []
-          for (const server of args) {
+          for (const raw of args) {
+            const { name: server, hadAt } = normalizeServerArg(raw)
+            // @-mentions target servers that are already connected; /ssh is
+            // for new connections, so teach instead of connecting.
+            if (hadAt || server.length === 0) {
+              const hint =
+                server.length === 0
+                  ? "give a server name, e.g. /ssh web1"
+                  : `use /ssh ${server} (without @); @mentions target already-connected servers`
+              results.push(`- ${raw}: did not connect — ${hint}`)
+              continue
+            }
             const existing = conns.get(server)
             if (existing && socketAlive(existing.socketPath, existing.host)) {
               results.push(`- ${server}: already connected`)
@@ -228,7 +240,12 @@ export default Plugin.define({
         execute: async ({ sessionID, prompt }) => {
           const ns = await namespaceFor(sessionID)
           const conns = nsConnections(ns)
-          const args = (prompt.text || "").trim().split(/\s+/).filter((a) => a.length > 0)
+          const args = (prompt.text || "")
+            .trim()
+            .split(/\s+/)
+            .filter((a) => a.length > 0)
+            .map((a) => normalizeServerArg(a).name)
+            .filter((a) => a.length > 0)
           if (args.length === 0) {
             await ctx.session.prompt({
               sessionID,
@@ -308,10 +325,12 @@ export default Plugin.define({
         }),
         execute: async (args, context) => {
           const ns = await namespaceFor(context.sessionID)
-          const decision = decide([args.server], namespaces, ns)
+          const server = normalizeServerArg(args.server).name
+          if (server.length === 0) throw new Error("empty server name")
+          const decision = decide([server], namespaces, ns)
           if (decision.action !== "remote" || decision.targets.length === 0) {
             throw new Error(
-              decision.action === "fail" ? decision.message : notConnected(args.server),
+              decision.action === "fail" ? decision.message : notConnected(server),
             )
           }
           const target = decision.targets[0]

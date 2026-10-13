@@ -101,6 +101,16 @@ export function buildRemoteCommand(cmd: string, targets: Connection[]): string {
   return `${parts.map((p) => `{ ${p} } &`).join(" ")} wait`
 }
 
+/**
+ * Normalize a server arg from /ssh, /disconnect_ssh, or ssh_exec.
+ * A leading @ is forgiven (users habitually @-mention servers) but flagged,
+ * since connection keys are always stored bare.
+ */
+export function normalizeServerArg(arg: string): { name: string; hadAt: boolean } {
+  const hadAt = arg.startsWith("@")
+  return { name: hadAt ? arg.replace(/^@+/, "") : arg, hadAt }
+}
+
 /** Minimal ~/.ssh/config Host parser. A `*` wildcard matches any host. */
 export function isHostInSshConfig(host: string, configText: string): boolean {
   const lines = configText.split(/\r?\n/)

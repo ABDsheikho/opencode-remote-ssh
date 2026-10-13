@@ -8,6 +8,7 @@ import {
   isHostInSshConfig,
   isManagedSocketFile,
   namespaceOf,
+  normalizeServerArg,
   refPathFor,
   shellQuote,
   socketPathFor,
@@ -293,5 +294,23 @@ describe("buildRefDescriptor", () => {
     expect(text).toContain("web1")
     expect(text).toContain("/projects/a")
     expect(text.split("\n").length).toBeLessThan(10)
+  })
+})
+
+describe("normalizeServerArg", () => {
+  it("leaves bare names untouched", () => {
+    expect(normalizeServerArg("web1")).toEqual({ name: "web1", hadAt: false })
+  })
+
+  it("strips a leading @ and flags it", () => {
+    expect(normalizeServerArg("@web1")).toEqual({ name: "web1", hadAt: true })
+  })
+
+  it("strips repeated leading @s", () => {
+    expect(normalizeServerArg("@@web1")).toEqual({ name: "web1", hadAt: true })
+  })
+
+  it("yields an empty name for a lone @", () => {
+    expect(normalizeServerArg("@")).toEqual({ name: "", hadAt: true })
   })
 })
