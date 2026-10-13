@@ -282,7 +282,11 @@ export default Plugin.define({
             })
             return
           }
-          const servers = Array.from(conns.values()).map((conn) => `- ${conn.serverName} (${conn.host})`)
+          const servers = Array.from(conns.values()).map((conn) =>
+            socketAlive(conn.socketPath, conn.host)
+              ? `- ${conn.serverName} (${conn.host}) — alive`
+              : `- ${conn.serverName} (${conn.host}) — unreachable`,
+          )
           await ctx.session.prompt({
             sessionID,
             text: servers.join("\n"),
