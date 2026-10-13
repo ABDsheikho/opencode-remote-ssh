@@ -65,6 +65,12 @@ files there. OpenCode will auto-discover plugins in
 1. Use `/list_ssh` to list connections
 1. Use `/disconnect_ssh myserver` or `/disconnect_ssh all`
 
+Run one command on several servers at once — output is grouped per server:
+
+```text
+@web1 @web2 uptime
+```
+
 ## References
 
 Each connection registers `@servername` as a reference pointing at a small

@@ -7,8 +7,8 @@ remote execution.
 
 - `npm run typecheck` — `tsc --noEmit`, covers `src + tests`
 - `npm run build` — `tsc -p tsconfig.build.json`, emits `dist/` from `src` only
-- `npm test` — `vitest run` (mention parsing, namespace table, quoting, command
-  building)
+- `npm test` — `vitest run tests` (mention parsing, namespace table, quoting,
+  command building)
 - Focused: `npx vitest run tests/core.test.ts -t "<test name>"`
 - `npm run dev` — `tsc --watch -p tsconfig.build.json`
 - Order: `typecheck` → `test` before `build`. No CI config in repo.
