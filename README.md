@@ -140,6 +140,11 @@ config — `~/.config/opencode/opencode.jsonc`:
 > array — loading two copies in one server process creates two separate
 > registries.
 
+## Transparency
+
+This plugin is developed using AI tools and agents, with human review of every
+change.
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).
