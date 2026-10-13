@@ -3,6 +3,7 @@ import { spawnSync } from "child_process"
 import * as fs from "fs"
 import * as os from "os"
 import * as path from "path"
+import { z } from "zod"
 import {
   type Connection,
   type NamespaceMap,
@@ -296,6 +297,64 @@ export default Plugin.define({
       })
     })
 
+    await ctx.tool.transform((editor) => {
+      editor.add({
+        name: "ssh_exec",
+        description:
+          "Run a shell command on a connected SSH server in this workspace. Use this when the user asks about a connected server in plain words.",
+        input: z.object({
+          server: z.string().describe("Connected server name, e.g. 'web1'"),
+          command: z.string().describe("Shell command to run on the server"),
+        }),
+        execute: async (args, context) => {
+          const ns = await namespaceFor(context.sessionID)
+          const decision = decide([args.server], namespaces, ns)
+          if (decision.action !== "remote" || decision.targets.length === 0) {
+            throw new Error(
+              decision.action === "fail" ? decision.message : notConnected(args.server),
+            )
+          }
+          const target = decision.targets[0]
+          if (!socketAlive(target.socketPath, target.host)) {
+            namespaces.get(target.namespace)?.delete(target.serverName)
+            try {
+              fs.unlinkSync(target.socketPath)
+            } catch {}
+            await syncReferences()
+            throw new Error(notConnected(target.serverName))
+          }
+          const cleanCmd = stripTargetMentions(args.command, [target.serverName]).trim()
+          if (!cleanCmd) throw new Error("empty command after stripping server mention")
+          const result = ssh(["-S", target.socketPath, target.host, cleanCmd], 60000)
+          const stdout = (result.stdout || "").trim()
+          if (result.status === 0) return { content: stdout || "(no output)" }
+          const detail =
+            (result.stderr || "").trim().split("\n").slice(-1)[0] || "remote command failed"
+          throw new Error(`${target.serverName}: ${detail}`)
+        },
+      })
+    })
+
+    // Plain-words backup for @-mention routing: when this workspace has
+    // connections, tell the model to reach them through shell + mention and
+    // never through local file tools (which only see this machine).
+    const systemReg = await ctx.session.hook("context", async (event) => {
+      const ns = await namespaceFor(event.sessionID)
+      const conns = namespaces.get(ns)
+      if (!conns || conns.size === 0) return
+      const names = Array.from(conns.keys()).join(", ")
+      event.system.push({
+        type: "text",
+        text: [
+          `Connected SSH servers in this workspace: ${names}.`,
+          "When the user asks about a connected server in plain words (with or without @mention),",
+          "run it with the bash tool and put @server in the command, e.g. `ls /var/www @web1`.",
+          "Never use read, write, edit, glob, or grep for paths on a connected server;",
+          "those tools only see the local machine.",
+        ].join("\n"),
+      })
+    })
+
     const hookReg = await ctx.tool.hook("execute.before", async (event) => {
       // The shell tool is exposed as both "bash" (historic) and "shell" (current).
       if (event.tool !== "bash" && event.tool !== "shell") return
@@ -353,6 +412,7 @@ export default Plugin.define({
     return async () => {
       controller.abort()
       await hookReg.dispose()
+      await systemReg.dispose()
       for (const conns of namespaces.values()) {
         for (const conn of conns.values()) disconnectConnection(conn)
       }
