@@ -65,6 +65,9 @@ files there. OpenCode will auto-discover plugins in
 1. Use `/list_ssh` to list connections
 1. Use `/disconnect_ssh myserver` or `/disconnect_ssh all`
 
+Plain sentences work too once connected — ask about a server by name and the
+model runs it remotely (via shell + mention, or the `ssh_exec` tool).
+
 Run one command on several servers at once — output is grouped per server:
 
 ```text

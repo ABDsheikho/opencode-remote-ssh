@@ -18,8 +18,9 @@ remote execution.
 
 ## Structure
 
-- `src/index.ts` — plugin entrypoint: commands, `tool.hook("execute.before")`,
-  reference sync, cleanup. All side effects (ssh spawn, fs, sockets) live here.
+- `src/index.ts` — plugin entrypoint: commands, `ssh_exec` tool,
+  `tool.hook("execute.before")`, `session.hook("context")` hint, reference sync,
+  cleanup. All side effects (ssh spawn, fs, sockets) live here.
 - `src/core.ts` — pure logic, fully unit-tested: `extractMentions`,
   `stripTargetMentions`, `decide`, `buildRemoteCommand`, `namespaceOf`,
   `socketPathFor`/`refPathFor`, `isHostInSshConfig`.
