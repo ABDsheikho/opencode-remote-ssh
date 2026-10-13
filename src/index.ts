@@ -147,6 +147,9 @@ export default Plugin.define({
           } catch {}
         }
       })
+      // reload() is currently a no-op client-side; TUI needs a full restart for
+      // new @server completions. Keep the call so a future server fix picks it
+      // up. Upstream: https://github.com/anomalyco/opencode/issues/53954
       try {
         await ctx.reference.reload()
       } catch {}
